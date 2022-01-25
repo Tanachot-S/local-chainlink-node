@@ -1,0 +1,10 @@
+type            = "cron"
+name = "test-feed-price"
+schemaVersion   = 1
+schedule        = "CRON_TZ=UTC */10 * * * * *"
+observationSource   = """
+ds          [type="http" method=GET url="https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD"];
+ds_parse    [type="jsonparse" path="RAW,ETH,USD,PRICE"];
+ds_multiply [type="multiply" times=100];
+ds -> ds_parse -> ds_multiply;
+"""

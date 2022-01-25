@@ -1,0 +1,67 @@
+version: "3.7"
+services:
+  chainlink_postgres:
+    container_name: chainlink_postgres
+    mem_limit: 300M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: afmz0tjTvtdv
+    volumes:
+      - ./vol/postgres:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - chainlink-network
+
+  # https://docs.chain.link/docs/run-an-ethereum-client/ (EVM)
+  eth: 
+    container_name: eth
+    image: ethereum/client-go:latest 
+    restart: always
+    ports:
+      # - "30303:30303"
+      # - "8545:8545" # http rpc port
+      - "8546:8546" # websocket rpc port
+    # command: --datadir=geth --syncmode="light" --ws --ws.addr="0.0.0.0" --ws.origins="*" --ropsten
+    command: --datadir=/geth --ws --ws.addr="0.0.0.0" --ws.origins="*" --ipcdisable --rinkeby
+    volumes:
+      - ./vol/geth-rinkeby:/geth
+    networks:
+      - chainlink-network
+
+  # eth: 
+  #   container_name: eth
+  #   image: openethereum/openethereum:latest
+  #   restart: always
+  #   ports:
+  #     - "8546:8546"
+  #   # command: --chain=kovan --no-jsonrpc --no-ipc --ws-interface=all --ws-origins="all" --base-path /home/openethereum/.local/share/io.parity.ethereum/
+  #   command: --chain=kovan --jsonrpc-apis=rpc --ws-interface=all --ws-origins="all" --base-path /home/openethereum/.local/share/io.parity.ethereum/
+  #   volumes:
+  #     - ./vol/parity-kovan:/home/openethereum/.local/share/io.parity.ethereum/
+  #   networks:
+  #     - chainlink-network
+
+  chainlink:
+    container_name: chainlink
+    image: smartcontract/chainlink:1.0.1
+    command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+    restart: always
+    ports:
+      - "6688:6688"
+    env_file:
+      - ./vol/chainlink-rinkeby/.env
+    volumes:
+      - ./vol/chainlink-rinkeby:/chainlink
+    networks:
+      - chainlink-network
+
+networks:
+  chainlink-network:

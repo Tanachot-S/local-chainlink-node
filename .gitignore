@@ -1,0 +1,10 @@
+.DS_Store
+
+!vol/chainlink-rinkeby/.api
+!vol/chainlink-rinkeby/.password
+!vol/chainlink-rinkeby/.env
+
+vol/geth-rinkeby/*
+vol/postgres/*
+vol/chainlink-rinkeby/*
+vol/parity-kovan
