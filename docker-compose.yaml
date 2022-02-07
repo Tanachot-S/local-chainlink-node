@@ -1,7 +1,36 @@
 version: "3.7"
 services:
-  chainlink_postgres:
-    container_name: chainlink_postgres
+  # https://docs.chain.link/docs/run-an-ethereum-client/ (EVM)
+  # eth:
+  #   container_name: eth
+  #   image: ethereum/client-go:stable 
+  #   restart: always
+  #   ports:
+  #     # - "30303:30303"
+  #     # - "8545:8545" # http rpc port
+  #     - "8546:8546" # websocket rpc port
+  #   # command: --datadir=geth --syncmode="light" --ws --ws.addr="0.0.0.0" --ws.origins="*" --ropsten
+  #   command: --datadir=/geth --ws --ws.addr="0.0.0.0" --ws.origins="*" --ipcdisable --rpc.allow-unprotected-txs --rinkeby # --rpc.allow-unprotected-txs
+  #   volumes:
+  #     - ./vol/geth-rinkeby:/geth
+  #   networks:
+  #     - chainlink-network
+
+  # eth: 
+  #   container_name: eth
+  #   image: openethereum/openethereum:latest
+  #   restart: always
+  #   ports:
+  #     - "8546:8546"
+  #   command: --chain=kovan --ws-max-payload="1024" --ws-interface="all" --ws-origins="all" --base-path /home/openethereum/.local/share/io.parity.ethereum/
+  #   volumes:
+  #     - ./vol/parity-kovan:/home/openethereum/.local/share/io.parity.ethereum/
+  #   networks:
+  #     - chainlink-network
+
+  # bootstrap
+  postgres-bootstrap:
+    container_name: postgres-bootstrap
     mem_limit: 300M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
@@ -14,44 +43,15 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: afmz0tjTvtdv
     volumes:
-      - ./vol/postgres:/var/lib/postgresql/data
+      - ./vol/postgres-bootstrap:/var/lib/postgresql/data
     ports:
       - "5432:5432"
     networks:
       - chainlink-network
 
-  # https://docs.chain.link/docs/run-an-ethereum-client/ (EVM)
-  eth: 
-    container_name: eth
-    image: ethereum/client-go:latest 
-    restart: always
-    ports:
-      # - "30303:30303"
-      # - "8545:8545" # http rpc port
-      - "8546:8546" # websocket rpc port
-    # command: --datadir=geth --syncmode="light" --ws --ws.addr="0.0.0.0" --ws.origins="*" --ropsten
-    command: --datadir=/geth --ws --ws.addr="0.0.0.0" --ws.origins="*" --ipcdisable --rinkeby
-    volumes:
-      - ./vol/geth-rinkeby:/geth
-    networks:
-      - chainlink-network
-
-  # eth: 
-  #   container_name: eth
-  #   image: openethereum/openethereum:latest
-  #   restart: always
-  #   ports:
-  #     - "8546:8546"
-  #   # command: --chain=kovan --no-jsonrpc --no-ipc --ws-interface=all --ws-origins="all" --base-path /home/openethereum/.local/share/io.parity.ethereum/
-  #   command: --chain=kovan --jsonrpc-apis=rpc --ws-interface=all --ws-origins="all" --base-path /home/openethereum/.local/share/io.parity.ethereum/
-  #   volumes:
-  #     - ./vol/parity-kovan:/home/openethereum/.local/share/io.parity.ethereum/
-  #   networks:
-  #     - chainlink-network
-
-  chainlink:
-    container_name: chainlink
-    image: smartcontract/chainlink:1.0.1
+  chainlink-bootstrap:
+    container_name: chainlink-bootstrap
+    image: smartcontract/chainlink:0.10.15
     command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
     restart: always
     ports:
@@ -62,6 +62,181 @@ services:
       - ./vol/chainlink-rinkeby:/chainlink
     networks:
       - chainlink-network
+
+  # # 1
+  postgres-1:
+    container_name: postgres-1
+    mem_limit: 300M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: afmz0tjTvtdv
+    volumes:
+      - ./vol/postgres-1:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - chainlink-network
+
+  chainlink-1:
+    container_name: chainlink-1
+    image: smartcontract/chainlink:0.10.15
+    command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+    restart: always
+    ports:
+      - "6689:6688"
+    env_file:
+      - ./vol/chainlink-rinkeby-1/.env
+    volumes:
+      - ./vol/chainlink-rinkeby-1:/chainlink
+    networks:
+      - chainlink-network
+
+  # 2
+  postgres-2:
+    container_name: postgres-2
+    mem_limit: 300M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 15s
+      timeout: 15s
+      retries: 3
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: afmz0tjTvtdv
+    volumes:
+      - ./vol/postgres-2:/var/lib/postgresql/data
+    ports:
+      - "5434:5432"
+    networks:
+      - chainlink-network
+
+  chainlink-2:
+    container_name: chainlink-2
+    image: smartcontract/chainlink:0.10.15
+    command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+    restart: always
+    ports:
+      - "6690:6688"
+    env_file:
+      - ./vol/chainlink-rinkeby-2/.env
+    volumes:
+      - ./vol/chainlink-rinkeby-2:/chainlink
+    networks:
+      - chainlink-network
+
+  # 3
+  # postgres-3:
+  #   container_name: postgres-3
+  #   mem_limit: 300M
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 15s
+  #     timeout: 15s
+  #     retries: 3
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: afmz0tjTvtdv
+  #   volumes:
+  #     - ./vol/postgres-3:/var/lib/postgresql/data
+  #   ports:
+  #     - "5435:5432"
+  #   networks:
+  #     - chainlink-network
+
+  # chainlink-3:
+  #   container_name: chainlink-3
+  #   image: smartcontract/chainlink:0.10.15
+  #   command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+  #   restart: always
+  #   ports:
+  #     - "6691:6688"
+  #   env_file:
+  #     - ./vol/chainlink-rinkeby-3/.env
+  #   volumes:
+  #     - ./vol/chainlink-rinkeby-3:/chainlink
+  #   networks:
+  #     - chainlink-network
+
+  # # 4 
+  # postgres-4:
+  #   container_name: postgres-4
+  #   mem_limit: 300M
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 15s
+  #     timeout: 15s
+  #     retries: 3
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: afmz0tjTvtdv
+  #   volumes:
+  #     - ./vol/postgres-4:/var/lib/postgresql/data
+  #   ports:
+  #     - "5436:5432"
+  #   networks:
+  #     - chainlink-network
+
+  # chainlink-4:
+  #   container_name: chainlink-4
+  #   image: smartcontract/chainlink:0.10.15
+  #   command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+  #   restart: always
+  #   ports:
+  #     - "6692:6688"
+  #   env_file:
+  #     - ./vol/chainlink-rinkeby-4/.env
+  #   volumes:
+  #     - ./vol/chainlink-rinkeby-4:/chainlink
+  #   networks:
+  #     - chainlink-network
+
+  # # 5
+  # postgres-5:
+  #   container_name: postgres-5
+  #   mem_limit: 300M
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U postgres"]
+  #     interval: 15s
+  #     timeout: 15s
+  #     retries: 3
+  #   image: postgres
+  #   restart: always
+  #   environment:
+  #     POSTGRES_USER: postgres
+  #     POSTGRES_PASSWORD: afmz0tjTvtdv
+  #   volumes:
+  #     - ./vol/postgres-5:/var/lib/postgresql/data
+  #   ports:
+  #     - "5437:5432"
+  #   networks:
+  #     - chainlink-network
+
+  # chainlink-5:
+  #   container_name: chainlink-5
+  #   image: smartcontract/chainlink:0.10.15
+  #   command: [ "local", "n", "--password", "/chainlink/.password", "--api", "/chainlink/.api"] # --network host is ref to local db
+  #   restart: always
+  #   ports:
+  #     - "6693:6688"
+  #   env_file:
+  #     - ./vol/chainlink-rinkeby-5/.env
+  #   volumes:
+  #     - ./vol/chainlink-rinkeby-5:/chainlink
+  #   networks:
+  #     - chainlink-network
 
 networks:
   chainlink-network:
